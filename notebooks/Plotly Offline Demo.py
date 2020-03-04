@@ -15,8 +15,6 @@ dbutils.fs.ls(scratch_path)
 
 # MAGIC %sh 
 # MAGIC pip install plotly --upgrade
-# MAGIC pip install chart_studio --upgrade
-# MAGIC pip install nbformat --upgrade
 
 # COMMAND ----------
 
@@ -125,7 +123,7 @@ displayHTML(p)
 
 # COMMAND ----------
 
-dep_stations = testJsonData.groupBy(testJsonData['Start Station']).count().toPandas().sort('count', ascending=False)
+dep_stations = testJsonData.groupBy(testJsonData['Start Station']).count().toPandas().sort_values(by='count', ascending=False)
 dep_stations['Start Station'][:3] # top 3 stations
 
 # COMMAND ----------
@@ -136,16 +134,20 @@ dep_stations['Start Station'][:3] # top 3 stations
 
 # COMMAND ----------
 
+import pandas as pd
+
+# COMMAND ----------
+
 def transform_df(df):
     df['counts'] = 1
     df['Start Date'] = df['Start Date'].apply(pd.to_datetime)
-    return df.set_index('Start Date').resample('D', how='sum')
+    return df.set_index('Start Date').resample('D').sum()
 
 pop_stations = [] # being popular stations - we could easily extend this to more stations
 for station in dep_stations['Start Station'][:3]:
-    temp = transform_df(btd.where(btd['Start Station'] == station).select("Start Date").toPandas())
+    temp = transform_df(testJsonData.where(testJsonData['Start Station'] == station).select("Start Date").toPandas())
     pop_stations.append(
-        go.Scatter(
+        Scatter(
         x=temp.index,
         y=temp.counts,
         name=station
